@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/hello_cargo.iml" filepath="$PROJECT_DIR$/.idea/hello_cargo.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/rustplayground.iml" filepath="$PROJECT_DIR$/.idea/rustplayground.iml" />
     </modules>
   </component>
 </project>
