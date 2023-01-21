@@ -1,17 +1,16 @@
-const X_1: i64 = 122;
 fn main() {
-    println!("x is {X_1}");
-    let x = 1;
-    println!("x is {x}");
-
-    let x = 5;
-    println!("x is {x}");
-
-    let x = "fsdff";
-
-    {
-        let x = 7;
-        println!("x is {x}");
+    for i in 0..=10 {
+        let ret = fib(i);
+        println!("i={i}, ret is {ret}")
     }
-    println!("x is {x}");
+}
+
+fn fib(n: i32) -> i32 {
+    if n == 0 {
+        return 0;
+    }
+    if n == 1 {
+        return 1;
+    }
+    return fib(n - 1) + fib(n - 2);
 }
