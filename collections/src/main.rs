@@ -1,8 +1,9 @@
 fn main() {
-    let mut v = vec![1, 2, 3, 4];
-    for i in &mut v {
-        *i += 1; // boxed ? why the value in vec changed here
+    let mut s1 = "111".to_string();
+    let s2 = "2".to_string();
+    s1.push_str(&s2);
+    println!("{:?}", s1);
+    for c in s1.bytes() {
+        println!("{c}");
     }
-
-    println!("v:{:#?}", v)
 }
