@@ -1,7 +1,9 @@
 fn main() {
-    for i in 0..=10 {
+    let mut i = 1;
+    while i < 10 {
         let ret = fib(i);
-        println!("i={i}, ret is {ret}")
+        println!("i={i}, ret is {ret}");
+        i += 1; // not support i++ https://doc.rust-lang.org/1.2.0/complement-design-faq.html#why-no---x-or-x++?
     }
 }
 
