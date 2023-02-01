@@ -7,6 +7,7 @@
       <sourceFolder url="file://$MODULE_DIR$/hello_cargo/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/collections/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/error/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/generic/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/guessing_game/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/variables/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/hello_cargo/target" />
@@ -15,6 +16,7 @@
       <excludeFolder url="file://$MODULE_DIR$/variables/target" />
       <excludeFolder url="file://$MODULE_DIR$/collections/target" />
       <excludeFolder url="file://$MODULE_DIR$/error/target" />
+      <excludeFolder url="file://$MODULE_DIR$/generic/target" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
