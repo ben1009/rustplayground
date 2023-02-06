@@ -1,0 +1,2 @@
+value: ["target/debug/minigrep", "re", "./test.txt"], len: 3
+ret: ["I'm nobody! Who are you?", "Are you nobody, too?", "Then there's a pair of us - don't tell!", "How dreary to be somebody!"]
