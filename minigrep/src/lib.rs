@@ -7,28 +7,42 @@ pub struct Config {
 }
 
 impl Config {
+    // the book' s case
+    // impl Config {
+    //     pub fn build(
+    //         mut args: impl Iterator<Item = String>,
+    //     ) -> Result<Config, &'static str> {
+
+    // also do clone in s.into_string(), so nothing fancy
+
+    // #[stable(feature = "env", since = "1.0.0")]
+    // impl Iterator for Args {
+    //     type Item = String;
+    //     fn next(&mut self) -> Option<String> {
+    //         self.inner.next().map(|s| s.into_string().unwrap())
+    //     }
+    //     fn size_hint(&self) -> (usize, Option<usize>) {
+    //         self.inner.size_hint()
+    //     }
+    // }
+
     pub fn new(args: &Vec<String>) -> Result<Config, &'static str> {
         if args.len() < 3 {
-            return Err("args is less than 3");
+            return Err("args len < 3");
         }
 
-        let query = args.get(1).unwrap().clone();
-        let file_path = args.get(2).unwrap().clone();
-
+        let query = String::from(&args[1]);
+        let file_path = args[2].to_string();
         let config = Config { file_path, query };
         Ok(config)
     }
 }
 
 fn search<'a>(query: &str, content: &'a str) -> Vec<&'a str> {
-    let mut ret = Vec::new();
-    for l in content.lines() {
-        if l.contains(query) {
-            ret.push(l);
-        }
-    }
-
-    return ret;
+    return content
+        .lines()
+        .filter(|line| line.contains(query))
+        .collect();
 }
 
 pub fn run_grep(config: &Config) {
@@ -38,7 +52,7 @@ pub fn run_grep(config: &Config) {
     });
 
     let ret = search(config.query.as_str(), file_content.as_str());
-    println!("ret: {:?}", ret)
+    println!("ret: {:?}", ret);
 }
 
 #[cfg(test)]
@@ -47,17 +61,9 @@ mod tests {
 
     #[test]
     fn args_len_less_3() {
-        let args = &vec![String::from("1"), String::from("2")];
-        let ret = Config::new(args);
-
-        assert_eq!(ret.unwrap_err(), "args is less than 3")
-    }
-
-    #[test]
-    fn io_error() {
-        let args = &vec![String::from("1"), String::from("2"), String::from("3")];
-        let ret = Config::new(args);
-
-        assert_eq!(ret.unwrap_err(), "io error")
+        let args = vec!["1".to_string(), "2".to_string()];
+        let ret = Config::new(args.as_slice());
+        assert_eq!(ret.as_ref().unwrap().file_path, "");
+        assert_eq!(ret.as_ref().unwrap().query, "2");
     }
 }
