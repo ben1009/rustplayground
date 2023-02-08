@@ -26,17 +26,17 @@ impl Config {
     //     }
     // }
 
-    pub fn new(args: &mut Vec<String>) -> Result<Config, &'static str> {
+    pub fn new(mut args: Vec<String>) -> Result<Config, &'static str> {
         if args.len() < 3 {
             return Err("args len < 3");
         }
 
-        let query = mem::take(&mut args[1]);
+        let file_path = args.pop().unwrap();
         // https://stackoverflow.com/questions/27904864/what-does-cannot-move-out-of-index-of-mean
         // Implicitly moving out of a Vec is not allowed as it would leave it in an invalid state
         // — one element is moved out, the others are not.
         // If you have a mutable Vec, you can use a method like Vec::remove to take a single value out:
-        let file_path = args[2].to_string();
+        let query = args.pop().unwrap();
         let config = Config { file_path, query };
 
         Ok(config)
@@ -70,5 +70,9 @@ mod tests {
         let ret = Config::new(&mut args);
         assert_eq!(ret.as_ref().unwrap().file_path, "");
         assert_eq!(ret.as_ref().unwrap().query, "2");
+
+        let mut v = vec![1, 2];
+        let first = v.split_first();
+        println!("The first item is: {}", first);
     }
 }

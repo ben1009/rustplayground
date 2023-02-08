@@ -4,7 +4,7 @@ fn main() {
     // let args: Vec<String> = env::args().collect();
     // println!("value: {:?}, len: {}", args, args.len());
 
-    let config = minigrep::Config::new(&mut env::args().collect()).unwrap_or_else(|e| {
+    let config = minigrep::Config::new(env::args().collect()).unwrap_or_else(|e| {
         eprintln!("exit with error: {}", e);
         process::exit(1);
     });
