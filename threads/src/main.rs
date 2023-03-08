@@ -1,29 +1,27 @@
-use std::fmt::Debug;
-use std::sync::atomic::{AtomicI32, Ordering};
-use std::sync::{mpsc, Arc, Mutex};
-use std::thread;
-use std::time::Duration;
+use std::collections::HashMap;
 
-fn main() {
-    let mut handlers = vec![];
-    let num = Arc::new(AtomicI32::new(0));
-    // let (tx, rx) = mpsc::channel();
+struct Solution {}
 
-    for i in 1..10 {
-        let num = Arc::clone(&num);
-        let handler = thread::spawn(move || {
-            num.fetch_add(1, Ordering::Relaxed);
-            thread::sleep(Duration::from_micros(10));
-            println!("{}", num.load(Ordering::SeqCst));
-            // let mut count = lock.lock().unwrap();
-            // *count += 1;
-            // tx1.send(i).unwrap();
-            // drop(tx1);
-        });
-        handlers.push(handler);
-    }
-    // drop(tx);
-    for handler in handlers {
-        handler.join().unwrap();
+impl Solution {
+    #[allow(dead_code)]
+    pub fn two_sum(nums: Vec<i32>, target: i32) -> Vec<i32> {
+        let mut map = HashMap::new();
+        for (i, n) in nums.iter().enumerate() {
+            map.insert(*n, i);
+        }
+
+        for (i, n) in nums.iter().enumerate() {
+            if let Some(v) = map.get_key_value(&(target - n)) {
+                if *v.1 == i {
+                    continue;
+                }
+
+                return vec![*v.1 as i32, i as i32];
+            }
+        }
+
+        vec![]
     }
 }
+
+fn main() {}
