@@ -22,7 +22,6 @@ impl Solution {
         l1: Option<Box<ListNode>>,
         l2: Option<Box<ListNode>>,
     ) -> Option<Box<ListNode>> {
-        let (mut l1, mut l2) = (l1, l2);
         if l1.is_none() {
             return l2;
         }
@@ -30,6 +29,7 @@ impl Solution {
             return l1;
         }
 
+        let (mut l1, mut l2) = (l1, l2);
         let mut ret = Some(Box::new(ListNode::new(-1)));
         let mut head = &mut ret;
         let mut carry = 0;
@@ -55,10 +55,9 @@ impl Solution {
             carry = num / 10;
             num %= 10;
 
-            let next = ListNode::new(0);
+            let next = ListNode::new(num);
             head.as_mut().unwrap().next = Some(Box::new(next));
             head = &mut head.as_mut().unwrap().next;
-            head.as_mut().unwrap().val = num;
         }
 
         ret.unwrap().next
