@@ -6,8 +6,8 @@
 ## provide the basic setup for rust project
 
 - github actions
-  - checks(fmt, clippy, test, coverage, typos with nightly and beta versions, mutil-os)
-  - coverage(codecov)
+  - checks (fmt, clippy, test, coverage, typos with nightly and beta versions, mutil-os)
+  - coverage (codecov)
 - rustfmt config
 - toolchain
 - cargo makefile with dev as entrypoint
