@@ -9,17 +9,16 @@ on:
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
+
 env:    
   CARGO_REGISTRIES_CRATES_IO_PROTOCOL: sparse
+  RUST_TOOLCHAIN: nightly-2023-12-11
 
 name: Test
 jobs:
   required:
     runs-on: ubuntu-latest
-    name: ubuntu / ${{ matrix.toolchain }}
-    strategy:
-      matrix:
-        toolchain: [nightly-2023-12-11]
+    name: ubuntu
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@eb238b55efaa70779f274895e782ed17c84f2895 # v2.6.1
@@ -29,10 +28,10 @@ jobs:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
         with:
           submodules: true
-      - name: Install ${{ matrix.toolchain }}
+      - name: Install ${{ env.RUST_TOOLCHAIN }}
         uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295 # master
         with:
-          toolchain: ${{ matrix.toolchain }}
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
       - name: cargo generate-lockfile
         if: hashFiles('Cargo.lock') == ''
         run: cargo generate-lockfile
@@ -43,14 +42,14 @@ jobs:
         uses: taiki-e/install-action@nextest
       - name: cargo nextest --locked
         run: cargo nextest run --locked --workspace --all-features --all-targets
+
   os-check:
     runs-on: ${{ matrix.os }}
-    name: ${{ matrix.os }} / nightly
+    name: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [macos-latest, windows-latest]
-        toolchain: [nightly-2023-12-11]
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@eb238b55efaa70779f274895e782ed17c84f2895 # v2.6.1
@@ -63,7 +62,7 @@ jobs:
       - name: Install rust
         uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: ${{ matrix.toolchain }}  
+          toolchain: ${{ env.RUST_TOOLCHAIN }}  
       - name: cargo generate-lockfile
         if: hashFiles('Cargo.lock') == ''
         run: cargo generate-lockfile
@@ -75,7 +74,7 @@ jobs:
         run: cargo nextest run --locked --all-features --all-targets
   coverage:
     runs-on: ubuntu-latest
-    name: ubuntu / nightly / coverage
+    name: coverage
     strategy:
       matrix:
         toolchain: [nightly-2023-12-11]
