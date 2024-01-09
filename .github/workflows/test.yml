@@ -18,7 +18,7 @@ name: Test
 jobs:
   required:
     runs-on: ubuntu-latest
-    name: ubuntu
+    name: ubuntu-latest
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@eb238b55efaa70779f274895e782ed17c84f2895 # v2.6.1
@@ -75,9 +75,6 @@ jobs:
   coverage:
     runs-on: ubuntu-latest
     name: coverage
-    strategy:
-      matrix:
-        toolchain: [nightly-2023-12-11]
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@eb238b55efaa70779f274895e782ed17c84f2895 # v2.6.1
@@ -90,7 +87,7 @@ jobs:
       - name: Install rust
         uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: ${{ matrix.toolchain }}  
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
           components: llvm-tools-preview
       - name: cargo install cargo-llvm-cov
         uses: taiki-e/install-action@29ee91bbad05696171dd917a8c7a3838049b93d5 # cargo-llvm-cov

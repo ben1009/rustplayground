@@ -3,7 +3,6 @@
 [![codecov](https://codecov.io/gh/ben1009/init-conf/branch/master/graph/badge.svg)](https://codecov.io/gh/ben1009/init-conf)
 [![Test](https://github.com/ben1009/init-conf/actions/workflows/test.yml/badge.svg)](https://github.com/ben1009/init-conf/actions/workflows/test.yml)
 
-
 ## provide the basic setup for rust project
 
 - github actions
