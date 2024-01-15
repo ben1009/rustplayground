@@ -11,4 +11,6 @@
 - rustfmt config
 - toolchain
 - cargo makefile with dev as entrypoint
+  ![image](https://github.com/ben1009/init-conf/assets/1741864/97ebc089-4442-45d7-bcc3-3de40f1d65de)
+
 - `main.rs` is just for test all the workflows, could be removed when import to the other project
