@@ -10,8 +10,7 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
-env:    
-  CARGO_REGISTRIES_CRATES_IO_PROTOCOL: sparse
+env:
   RUST_TOOLCHAIN: nightly-2023-12-21
 
 name: Test
