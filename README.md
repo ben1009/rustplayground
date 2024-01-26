@@ -14,3 +14,12 @@
   ![image](https://github.com/ben1009/init-conf/assets/1741864/97ebc089-4442-45d7-bcc3-3de40f1d65de)
 
 - `main.rs` is just for test all the workflows, could be removed when import to the other project
+- When init a new project:
+
+  ```shell
+  git remote add conf git@github.com:ben1009/init-conf.git
+  git fetch conf
+  git merge --allow-unrelated-histories conf/master
+  ```
+
+  By using this strategy the history of the repo is included in the new repo, and future updates can be merged later.
