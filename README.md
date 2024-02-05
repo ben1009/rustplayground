@@ -17,7 +17,7 @@
 - When init a new project:
 
   ```shell
-  git remote add conf git@github.com:ben1009/init-conf.git
+  git remote add conf https://github.com/ben1009/init-conf.git
   git fetch conf
   git merge --allow-unrelated-histories conf/master
   ```
