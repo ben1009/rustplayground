@@ -9,15 +9,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use rust_init::{hello, iter_files};
-
 fn main() {
-    let h = hello::hello();
-    println!("{}", h);
+    // let h = hello::hello();
+    // println!("{}", h);
 
-    let path = "./_test";
-    iter_files::crate_files(path, h.as_bytes()).unwrap();
+    // let path = "./_test";
+    // iter_files::crate_files(path, h.as_bytes()).unwrap();
 
-    let content = iter_files::read_files(path).unwrap();
-    println!("{}", content);
+    // let content = iter_files::read_files(path).unwrap();
+    // println!("{}", content);
+    let pool = rust_init::thread_pool::ThreadPool::new(4);
+    for i in 0..10 {
+        pool.execute(move || println!("hello world: {}", i));
+    }
+
+    // thread::sleep(std::time::Duration::from_millis(1000));
 }
