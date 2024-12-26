@@ -9,19 +9,81 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-fn main() {
-    // let h = hello::hello();
-    // println!("{}", h);
+fn main() {}
 
-    // let path = "./_test";
-    // iter_files::crate_files(path, h.as_bytes()).unwrap();
+use std::iter;
 
-    // let content = iter_files::read_files(path).unwrap();
-    // println!("{}", content);
-    let pool = rust_init::thread_pool::ThreadPool::new(4);
-    for i in 0..10 {
-        pool.execute(move || println!("hello world: {}", i));
+#[inline(never)]
+pub fn mismatch(xs: &[u8], ys: &[u8]) -> usize {
+    xs.iter().zip(ys).take_while(|(x, y)| x == y).count()
+}
+
+#[inline(never)]
+pub fn mismatch_simd(xs: &[u8], ys: &[u8]) -> usize {
+    let l = xs.len().min(ys.len());
+    let mut xs = &xs[..l];
+    let mut ys = &ys[..l];
+    let mut off = 0;
+
+    unsafe {
+        use std::arch::x86_64::*;
+
+        let zero = _mm256_setzero_si256();
+        while xs.len() >= 32 {
+            let x = _mm256_loadu_si256(xs.as_ptr() as _);
+            let y = _mm256_loadu_si256(ys.as_ptr() as _);
+
+            let r = _mm256_xor_si256(x, y);
+            let r = _mm256_cmpeq_epi8(r, zero);
+            let r = _mm256_movemask_epi8(r);
+            if r.trailing_ones() < 32 {
+                return off + r.trailing_ones() as usize;
+            }
+
+            xs = &xs[32..];
+            ys = &ys[32..];
+            off += 32;
+        }
+    }
+    off + mismatch(xs, ys)
+}
+
+#[inline(never)]
+pub fn mismatch_chunked(xs: &[u8], ys: &[u8]) -> usize {
+    // https://users.rust-lang.org/t/how-to-find-common-prefix-of-two-byte-slices-effectively/25815/5
+    fn inner<const N: usize>(xs: &[u8], ys: &[u8]) -> usize {
+        let off = iter::zip(xs.chunks_exact(N), ys.chunks_exact(N))
+            .take_while(|(x, y)| x == y)
+            .count()
+            * N;
+        off + iter::zip(&xs[off..], &ys[off..])
+            .take_while(|(x, y)| x == y)
+            .count()
     }
 
-    // thread::sleep(std::time::Duration::from_millis(1000));
+    inner::<128>(xs, ys)
+}
+
+#[test]
+fn bench() {
+    fn bench_mismatch(name: &str, f: fn(&[u8], &[u8]) -> usize) {
+        let n = 500_000;
+        let m = 500;
+        let mut xs = "Hello, world".repeat(n).into_bytes();
+        let mut ys = xs.clone();
+        xs.push(b'x');
+        ys.extend(b"ijk");
+
+        let t = std::time::Instant::now();
+        let mut res = 0;
+        for _ in 0..m {
+            res += f(&xs, &ys);
+        }
+        eprintln!("{name:10} {:0.2?}", t.elapsed());
+        assert_eq!(res, 3000000000);
+    }
+
+    bench_mismatch("naive", mismatch);
+    bench_mismatch("simd ", mismatch_simd);
+    bench_mismatch("chunk ", mismatch_chunked);
 }
