@@ -74,12 +74,6 @@ fn bench() {
     bench_mismatch("simd ", mismatch_simd);
 }
 
-#[cfg(target_os = "linux")]
-#[cfg(test)]
-fn test() {
-    bench_mismatch("simd ", mismatch_simd);
-}
-
 #[cfg(test)]
 fn bench_mismatch(name: &str, f: fn(&[u8], &[u8]) -> usize) {
     let n = 500_000;
