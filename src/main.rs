@@ -67,28 +67,31 @@ pub fn mismatch_chunked(xs: &[u8], ys: &[u8]) -> usize {
 
 #[test]
 fn bench() {
-    fn bench_mismatch(name: &str, f: fn(&[u8], &[u8]) -> usize) {
-        let n = 500_000;
-        let m = 500;
-        let mut xs = "Hello, world".repeat(n).into_bytes();
-        let mut ys = xs.clone();
-        xs.push(b'x');
-        ys.extend(b"ijk");
-
-        let t = std::time::Instant::now();
-        let mut res = 0;
-        for _ in 0..m {
-            res += f(&xs, &ys);
-        }
-        eprintln!("{name:10} {:0.2?}", t.elapsed());
-        assert_eq!(res, 3000000000);
-    }
-
     bench_mismatch("naive", mismatch);
     bench_mismatch("simd ", mismatch_simd);
+    test();
+}
 
-    #[cfg(target_arch = "x86_64")]
-    if cfg!(target_arch = "x86_64") {
-        bench_mismatch("chunk ", mismatch_chunked);
+#[cfg(target_arch = "x86_64")]
+#[cfg(test)]
+fn test() {
+    bench_mismatch("chunk ", mismatch_chunked);
+}
+
+#[cfg(test)]
+fn bench_mismatch(name: &str, f: fn(&[u8], &[u8]) -> usize) {
+    let n = 500_000;
+    let m = 500;
+    let mut xs = "Hello, world".repeat(n).into_bytes();
+    let mut ys = xs.clone();
+    xs.push(b'x');
+    ys.extend(b"ijk");
+
+    let t = std::time::Instant::now();
+    let mut res = 0;
+    for _ in 0..m {
+        res += f(&xs, &ys);
     }
+    eprintln!("{name:10} {:0.2?}", t.elapsed());
+    assert_eq!(res, 3000000000);
 }
