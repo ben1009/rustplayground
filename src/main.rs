@@ -18,7 +18,8 @@ pub fn mismatch(xs: &[u8], ys: &[u8]) -> usize {
     xs.iter().zip(ys).take_while(|(x, y)| x == y).count()
 }
 
-#[cfg_attr(target_arch = "x86_64", inline(never))]
+#[cfg(target_arch = "x86_64")]
+#[inline(never)]
 pub fn mismatch_simd(xs: &[u8], ys: &[u8]) -> usize {
     let l = xs.len().min(ys.len());
     let mut xs = &xs[..l];
