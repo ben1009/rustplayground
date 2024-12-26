@@ -86,6 +86,8 @@ fn bench() {
 
     bench_mismatch("naive", mismatch);
     bench_mismatch("simd ", mismatch_simd);
-    #[cfg(target_arch = "x86_64")]
-    bench_mismatch("chunk ", mismatch_chunked);
+
+    if cfg!(target_arch = "x86_64") {
+        bench_mismatch("chunk ", mismatch_chunked);
+    }
 }
