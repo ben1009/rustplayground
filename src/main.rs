@@ -68,16 +68,16 @@ pub fn mismatch_chunked(xs: &[u8], ys: &[u8]) -> usize {
 #[test]
 fn bench() {
     bench_mismatch("naive", mismatch);
-    bench_mismatch("simd ", mismatch_chunked);
+    bench_mismatch("chunk ", mismatch_chunked);
 
     #[cfg(target_os = "linux")]
-    test();
+    bench_mismatch("simd ", mismatch_simd);
 }
 
 #[cfg(target_os = "linux")]
 #[cfg(test)]
 fn test() {
-    bench_mismatch("chunk ", mismatch_simd);
+    bench_mismatch("simd ", mismatch_simd);
 }
 
 #[cfg(test)]
