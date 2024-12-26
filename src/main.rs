@@ -18,7 +18,7 @@ pub fn mismatch(xs: &[u8], ys: &[u8]) -> usize {
     xs.iter().zip(ys).take_while(|(x, y)| x == y).count()
 }
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(target_os = "linux")]
 #[inline(never)]
 pub fn mismatch_simd(xs: &[u8], ys: &[u8]) -> usize {
     let l = xs.len().min(ys.len());
@@ -69,10 +69,11 @@ pub fn mismatch_chunked(xs: &[u8], ys: &[u8]) -> usize {
 fn bench() {
     bench_mismatch("naive", mismatch);
     bench_mismatch("simd ", mismatch_simd);
+    #[cfg(target_os = "linux")]
     test();
 }
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(target_os = "linux")]
 #[cfg(test)]
 fn test() {
     bench_mismatch("chunk ", mismatch_chunked);
