@@ -3,6 +3,3 @@ name = "rust-init"
 version = "0.1.0"
 authors = ["ben1009"]
 edition = "2021"
-
-[dependencies]
-anyhow = "1.0"
