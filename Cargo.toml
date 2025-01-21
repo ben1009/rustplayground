@@ -3,3 +3,7 @@ name = "rust-init"
 version = "0.1.0"
 authors = ["ben1009"]
 edition = "2021"
+
+[dependencies]
+tokio = { version = "1", features = ["full"] }
+await-tree = "0.2.1"

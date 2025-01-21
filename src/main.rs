@@ -9,85 +9,148 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-fn main() {}
+use std::time::{Duration, SystemTime};
 
-use std::iter;
+use await_tree::{Config, InstrumentAwait, Registry};
+use tokio::{
+    fs::{File, OpenOptions},
+    io::{self, AsyncReadExt, AsyncWriteExt},
+};
 
-#[inline(never)]
-pub fn mismatch(xs: &[u8], ys: &[u8]) -> usize {
-    xs.iter().zip(ys).take_while(|(x, y)| x == y).count()
-}
+#[tokio::main]
+async fn main() {
+    let registry = Registry::new(Config::default());
+    let root = registry.register((), "foo");
+    tokio::spawn(root.instrument(test()));
 
-#[cfg(target_os = "linux")]
-#[inline(never)]
-pub fn mismatch_simd(xs: &[u8], ys: &[u8]) -> usize {
-    let l = xs.len().min(ys.len());
-    let mut xs = &xs[..l];
-    let mut ys = &ys[..l];
-    let mut off = 0;
-
-    unsafe {
-        use std::arch::x86_64::*;
-
-        let zero = _mm256_setzero_si256();
-        while xs.len() >= 32 {
-            let x = _mm256_loadu_si256(xs.as_ptr() as _);
-            let y = _mm256_loadu_si256(ys.as_ptr() as _);
-
-            let r = _mm256_xor_si256(x, y);
-            let r = _mm256_cmpeq_epi8(r, zero);
-            let r = _mm256_movemask_epi8(r);
-            if r.trailing_ones() < 32 {
-                return off + r.trailing_ones() as usize;
-            }
-
-            xs = &xs[32..];
-            ys = &ys[32..];
-            off += 32;
+    loop {
+        tokio::time::interval(Duration::from_millis(500))
+            .tick()
+            .await;
+        if let Some(t) = registry.get(()) {
+            println!("{t}");
+        } else {
+            println!("None");
+            break;
         }
     }
-    off + mismatch(xs, ys)
 }
 
-#[inline(never)]
-pub fn mismatch_chunked(xs: &[u8], ys: &[u8]) -> usize {
-    // https://users.rust-lang.org/t/how-to-find-common-prefix-of-two-byte-slices-effectively/25815/5
-    fn inner<const N: usize>(xs: &[u8], ys: &[u8]) -> usize {
-        let off = iter::zip(xs.chunks_exact(N), ys.chunks_exact(N))
-            .take_while(|(x, y)| x == y)
-            .count()
-            * N;
-        off + iter::zip(&xs[off..], &ys[off..])
-            .take_while(|(x, y)| x == y)
-            .count()
-    }
+async fn read_from_file(file_name: &str) -> io::Result<Vec<u8>> {
+    let mut f = File::open(file_name).instrument_await("File::open").await?;
+    let mut str = vec![];
+    f.read_to_end(&mut str)
+        .instrument_await("read_to_end")
+        .await?;
 
-    inner::<128>(xs, ys)
+    Ok(str)
 }
 
-#[test]
-fn bench() {
-    bench_mismatch("naive", mismatch);
-    bench_mismatch("chunk ", mismatch_chunked);
+async fn write_to_file(file_name: &str) -> io::Result<()> {
+    // pending::<()>().instrument_await("pending in baz").await;
+    tokio::time::sleep(Duration::from_millis(100))
+        .instrument_await("sleep")
+        .await;
 
-    #[cfg(target_os = "linux")]
-    bench_mismatch("simd ", mismatch_simd);
+    let mut f = OpenOptions::new()
+        .create(true)
+        .write(true)
+        .truncate(true)
+        .open(file_name)
+        .instrument_await("OpenOptions::new")
+        .await?;
+    let s = format!(
+        "Hello World, {}\n",
+        SystemTime::now()
+            .duration_since(SystemTime::UNIX_EPOCH)
+            .unwrap()
+            .as_millis()
+    );
+
+    let _ = f.write(s.as_bytes()).instrument_await("write").await?;
+
+    f.sync_all().instrument_await("sync_all").await
 }
 
-#[cfg(test)]
-fn bench_mismatch(name: &str, f: fn(&[u8], &[u8]) -> usize) {
-    let n = 500_000;
-    let m = 500;
-    let mut xs = "Hello, world".repeat(n).into_bytes();
-    let mut ys = xs.clone();
-    xs.push(b'x');
-    ys.extend(b"ijk");
+async fn test() -> io::Result<()> {
+    tokio::time::sleep(Duration::from_millis(500))
+        .instrument_await("sleep")
+        .await;
 
-    let t = std::time::Instant::now();
-    let mut res = 0;
-    for _ in 0..m {
-        res += f(&xs, &ys);
-    }
-    eprintln!("{name:10} {:0.2?}", t.elapsed());
-    assert_eq!(res, 3000000000);
+    let file_name = "test.txt";
+    write_to_file(file_name)
+        .instrument_await("write_to_file, test.txt")
+        .await?;
+
+    let ret = read_from_file(file_name)
+        .instrument_await("read_from_file, test.txt")
+        .await
+        .unwrap_or_default();
+    println!(
+        "{}, {}",
+        file_name,
+        String::from_utf8(ret).unwrap_or_default()
+    );
+
+    let file_name = "test1.txt";
+    write_to_file(file_name)
+        .instrument_await("write_to_file, test1.txt")
+        .await?;
+
+    let ret = read_from_file(file_name)
+        .instrument_await("read_from_file, test1.txt")
+        .await
+        .unwrap_or_default();
+    println!(
+        "{}, {}",
+        file_name,
+        String::from_utf8(ret).unwrap_or_default()
+    );
+
+    let file_name = "test2.txt";
+    write_to_file(file_name)
+        .instrument_await("write_to_file, test2.txt")
+        .await?;
+
+    let ret = read_from_file(file_name)
+        .instrument_await("read_from_file, test2.txt")
+        .await
+        .unwrap_or_default();
+    println!(
+        "{}, {}",
+        file_name,
+        String::from_utf8(ret).unwrap_or_default()
+    );
+
+    let file_name = "test3.txt";
+    write_to_file(file_name)
+        .instrument_await("write_to_file, test3.txt")
+        .await?;
+
+    let ret = read_from_file(file_name)
+        .instrument_await("read_from_file, test3.txt")
+        .await
+        .unwrap_or_default();
+    println!(
+        "{}, {}",
+        file_name,
+        String::from_utf8(ret).unwrap_or_default()
+    );
+
+    let file_name = "test4.txt";
+    write_to_file(file_name)
+        .instrument_await("write_to_file, test4.txt")
+        .await?;
+
+    let ret = read_from_file(file_name)
+        .instrument_await("read_from_file, test4.txt")
+        .await
+        .unwrap_or_default();
+    println!(
+        "{}, {}",
+        file_name,
+        String::from_utf8(ret).unwrap_or_default()
+    );
+
+    Ok(())
 }
