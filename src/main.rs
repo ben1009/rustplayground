@@ -12,6 +12,7 @@
 use std::time::{Duration, SystemTime};
 
 use await_tree::{Config, InstrumentAwait, Registry};
+use rust_init::panic_hook;
 use tokio::{
     fs::{File, OpenOptions},
     io::{self, AsyncReadExt, AsyncWriteExt},
@@ -19,6 +20,7 @@ use tokio::{
 
 #[tokio::main]
 async fn main() {
+    panic_hook::set_panic_hook();
     let registry = Registry::new(Config::default());
     let root = registry.register((), "foo");
     tokio::spawn(root.instrument(test()));
@@ -31,6 +33,7 @@ async fn main() {
             println!("{t}");
         } else {
             println!("None");
+            // registry.get(()).unwrap();
             break;
         }
     }
@@ -157,7 +160,19 @@ async fn test() -> io::Result<()> {
 
 #[cfg(test)]
 mod tests {
+    use ctor::ctor;
+
     use super::*;
+
+    #[ctor]
+    fn init_color_backtrace() {
+        color_backtrace::install();
+    }
+
+    // #[test]
+    // fn panic() {
+    //     panic!();
+    // }
 
     #[test]
     fn test_main() {
