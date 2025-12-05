@@ -8,5 +8,5 @@ edition = "2021"
 await-tree = "0.2.1"
 backtrace = "0.3"
 color-backtrace = { version = "0.6" }
-ctor = "0.2.9"
+ctor = "0.6.3"
 tokio = { version = "1", features = ["full"] }
