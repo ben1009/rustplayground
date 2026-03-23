@@ -67,7 +67,8 @@ jobs:
       - name: Rust Cache
         uses: Swatinem/rust-cache@v2
       - name: cargo miri test
-        run:  cargo +${{ env.NIGHTLY }} miri test
+        # Only test library, not binaries (ctor crate is not compatible with Miri)
+        run: cargo +${{ env.NIGHTLY }} miri test --lib
         env:
           MIRIFLAGS: ""
   # loom:
