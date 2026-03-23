@@ -9,11 +9,12 @@
 // Then open the generated trace file in the dial9 trace viewer:
 //   https://dial9.dev/viewer (or the official viewer)
 //
-// The trace file will be saved to /tmp/dial9_demo/trace.bin
+// The trace files will be saved to the system temp directory as:
+//   dial9_demo/trace.0.bin, trace.1.bin, etc.
 
-use std::time::Duration;
+use std::{path::Path, time::Duration};
 
-use dial9_tokio_telemetry::telemetry::{RotatingWriter, TracedRuntime};
+use dial9_tokio_telemetry::telemetry::{RotatingWriter, TelemetryHandle, TracedRuntime};
 use tokio::{
     fs::{File, OpenOptions},
     io::{self, AsyncReadExt, AsyncWriteExt},
@@ -21,36 +22,45 @@ use tokio::{
     task::JoinSet,
 };
 
+// Constants for trace file rotation settings
+const ROTATE_SIZE_BYTES: u64 = 20 * 1024 * 1024; // 20 MiB
+const MAX_TOTAL_SIZE_BYTES: u64 = 100 * 1024 * 1024; // 100 MiB
+
 fn main() -> std::io::Result<()> {
+    // Get system temp directory for portable paths
+    let temp_dir = std::env::temp_dir();
+    let trace_dir = temp_dir.join("dial9_demo");
+    let trace_base = trace_dir.join("trace.bin");
+
     // Set up the rotating writer for trace output
-    // - Rotate after 20 MiB
-    // - Keep at most 100 MiB on disk
     let writer = RotatingWriter::new(
-        "/tmp/dial9_demo/trace.bin",
-        20 * 1024 * 1024,  // rotate after 20 MiB
-        100 * 1024 * 1024, // keep at most 100 MiB on disk
+        trace_base.to_str().unwrap_or("/tmp/dial9_demo/trace.bin"),
+        ROTATE_SIZE_BYTES,
+        MAX_TOTAL_SIZE_BYTES,
     )?;
 
     // Build a multi-threaded Tokio runtime with tracing enabled
     let mut builder = tokio::runtime::Builder::new_multi_thread();
     builder.worker_threads(4).enable_all();
 
-    let (runtime, _guard) = TracedRuntime::build_and_start(builder, writer)?;
+    let (runtime, guard) = TracedRuntime::build_and_start(builder, writer)?;
+    let handle = guard.handle();
 
     runtime.block_on(async {
         println!("🚀 dial9 demo starting...");
-        println!("Trace output: /tmp/dial9_demo/trace.bin");
+        println!("Trace output directory: {}", trace_dir.display());
+        println!("Trace files: trace.0.bin, trace.1.bin, etc.");
         println!();
 
         // Run various scenarios to generate interesting traces
-        run_file_io_demo().await?;
+        run_file_io_demo(&temp_dir).await?;
         run_concurrent_tasks_demo().await?;
         run_tcp_listener_demo().await?;
-        run_chained_wakes_demo().await?;
+        run_chained_wakes_demo(&handle).await?;
 
         println!();
         println!("✅ dial9 demo completed!");
-        println!("Open the trace file in the dial9 viewer to see the results.");
+        println!("Open the trace files in the dial9 viewer to see the results.");
 
         Ok(())
     })
@@ -58,14 +68,15 @@ fn main() -> std::io::Result<()> {
 
 /// Demo 1: File I/O operations
 /// This will show how async file operations interact with the runtime
-async fn run_file_io_demo() -> io::Result<()> {
+async fn run_file_io_demo(temp_dir: &Path) -> io::Result<()> {
     println!("📁 Running File I/O demo...");
 
     let mut tasks = JoinSet::new();
 
     for i in 0..5 {
+        let dir = temp_dir.to_path_buf();
         tasks.spawn(async move {
-            let filename = format!("/tmp/dial9_demo_test_{}.txt", i);
+            let filename = dir.join(format!("dial9_demo_test_{}.txt", i));
 
             // Write file
             let mut file = OpenOptions::new()
@@ -229,41 +240,50 @@ async fn run_tcp_listener_demo() -> io::Result<()> {
 
 /// Demo 4: Chained wakes
 /// This demonstrates how tasks wake each other and move between workers
-async fn run_chained_wakes_demo() -> io::Result<()> {
+/// Uses TelemetryHandle::spawn to capture wake-event traces
+async fn run_chained_wakes_demo(handle: &TelemetryHandle) -> io::Result<()> {
     println!("🔗 Running Chained Wakes demo...");
 
-    let (_tx1, _rx1) = tokio::sync::oneshot::channel::<()>();
     let (tx2, rx2) = tokio::sync::oneshot::channel::<String>();
     let (tx3, rx3) = tokio::sync::oneshot::channel::<String>();
 
     // Task 3 waits on task 2, which waits on task 1
-    let task3 = tokio::spawn(async move {
+    // Use handle.spawn() to capture wake edges in dial9 traces
+    let task3 = handle.spawn(async move {
         let start = tokio::time::Instant::now();
-        let msg = rx3.await.unwrap();
-        println!(
-            "  Task 3 received: {} (elapsed: {:?})",
-            msg,
-            start.elapsed()
-        );
+        match rx3.await {
+            Ok(msg) => {
+                println!(
+                    "  Task 3 received: {} (elapsed: {:?})",
+                    msg,
+                    start.elapsed()
+                );
+            }
+            Err(_) => println!("  Task 3: channel closed without message"),
+        }
         "Task 3 done"
     });
 
-    let task2 = tokio::spawn(async move {
+    let task2 = handle.spawn(async move {
         let start = tokio::time::Instant::now();
-        let msg = rx2.await.unwrap();
-        tokio::time::sleep(Duration::from_millis(20)).await;
-        tx3.send(format!("{} -> Task 2", msg)).unwrap();
-        println!(
-            "  Task 2 forwarded message (elapsed: {:?})",
-            start.elapsed()
-        );
+        match rx2.await {
+            Ok(msg) => {
+                tokio::time::sleep(Duration::from_millis(20)).await;
+                let _ = tx3.send(format!("{} -> Task 2", msg));
+                println!(
+                    "  Task 2 forwarded message (elapsed: {:?})",
+                    start.elapsed()
+                );
+            }
+            Err(_) => println!("  Task 2: channel closed without message"),
+        }
         "Task 2 done"
     });
 
-    let task1 = tokio::spawn(async move {
+    let task1 = handle.spawn(async move {
         let start = tokio::time::Instant::now();
         tokio::time::sleep(Duration::from_millis(30)).await;
-        tx2.send("Hello from Task 1".to_string()).unwrap();
+        let _ = tx2.send("Hello from Task 1".to_string());
         println!("  Task 1 sent message (elapsed: {:?})", start.elapsed());
         "Task 1 done"
     });
@@ -271,14 +291,16 @@ async fn run_chained_wakes_demo() -> io::Result<()> {
     // Also demonstrate mpsc channel usage
     let (mpsc_tx, mut mpsc_rx) = tokio::sync::mpsc::channel::<i32>(10);
 
-    let producer = tokio::spawn(async move {
+    let producer = handle.spawn(async move {
         for i in 0..5 {
             tokio::time::sleep(Duration::from_millis(15)).await;
-            mpsc_tx.send(i).await.unwrap();
+            if mpsc_tx.send(i).await.is_err() {
+                break;
+            }
         }
     });
 
-    let consumer = tokio::spawn(async move {
+    let consumer = handle.spawn(async move {
         let mut sum = 0;
         while let Some(val) = mpsc_rx.recv().await {
             sum += val;
@@ -288,8 +310,18 @@ async fn run_chained_wakes_demo() -> io::Result<()> {
         sum
     });
 
-    // Wait for all tasks
-    let _ = tokio::try_join!(task1, task2, task3, producer, consumer);
+    // Wait for all tasks and handle errors properly
+    match tokio::try_join!(task1, task2, task3, producer, consumer) {
+        Ok((r1, r2, r3, _, sum)) => {
+            println!(
+                "  All tasks completed: {:?}, {:?}, {:?}, sum={}",
+                r1, r2, r3, sum
+            );
+        }
+        Err(e) => {
+            eprintln!("  Task failed: {}", e);
+        }
+    }
 
     Ok(())
 }
