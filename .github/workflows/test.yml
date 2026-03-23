@@ -11,7 +11,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  RUST_TOOLCHAIN: nightly-2025-03-20
+  RUST_TOOLCHAIN: nightly
 
 name: Test
 jobs:
