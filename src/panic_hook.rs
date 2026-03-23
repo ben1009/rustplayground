@@ -1,4 +1,8 @@
-use std::panic::PanicHookInfo;
+// PanicInfo was renamed to PanicHookInfo in Rust 1.82
+// For compatibility with both 1.80 (MSRV) and newer versions, we use
+// PanicInfo with deprecated allowed since it's the stable API name
+#[allow(deprecated)]
+use std::panic::PanicInfo;
 
 use backtrace::Backtrace;
 use color_backtrace::BacktracePrinter;
@@ -11,7 +15,8 @@ pub fn set_panic_hook() {
     }));
 }
 
-pub fn log_panic(panic: &PanicHookInfo) {
+#[allow(deprecated)]
+pub fn log_panic(panic: &PanicInfo<'_>) {
     let backtrace = Backtrace::new();
     let printer = BacktracePrinter::new().lib_verbosity(color_backtrace::Verbosity::Full);
     let colored = printer
