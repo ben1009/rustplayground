@@ -8,14 +8,14 @@ edition = "2021"
 name = "dial9_demo"
 required-features = ["dial9"]
 
-[features]
-default = []
-dial9 = ["dep:dial9-tokio-telemetry"]
+# [features]
+# default = []
+# dial9 = ["dep:dial9-tokio-telemetry"]
 
 [dependencies]
-await-tree = "0.2.1"
+await-tree = "0.3.1"
 backtrace = "0.3"
-color-backtrace = { version = "0.6" }
-ctor = "0.2.9"
-dial9-tokio-telemetry = { version = "0.2", optional = true }
+color-backtrace = "0.7.2"
+ctor = "0.6.3"
+dial9-tokio-telemetry = "0.2"
 tokio = { version = "1", features = ["full"] }
