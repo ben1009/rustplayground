@@ -2,20 +2,20 @@
 name = "rust-init"
 version = "0.1.0"
 authors = ["ben1009"]
-edition = "2021"
+edition = "2024"
 
 [[bin]]
 name = "dial9_demo"
-# required-features = ["dial9"]
+required-features = ["dial9"]
 
-# [features]
-# default = []
-# dial9 = ["dep:dial9-tokio-telemetry"]
+[features]
+default = []
+dial9 = ["dep:dial9-tokio-telemetry"]
 
 [dependencies]
 await-tree = "0.3.1"
 backtrace = "0.3"
 color-backtrace = "0.7.2"
 ctor = "0.6.3"
-dial9-tokio-telemetry = "0.2"
+dial9-tokio-telemetry = { version = "0.2", optional = true }
 tokio = { version = "1", features = ["full"] }
