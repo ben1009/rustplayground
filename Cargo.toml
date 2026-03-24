@@ -6,7 +6,7 @@ edition = "2021"
 
 [[bin]]
 name = "dial9_demo"
-required-features = ["dial9"]
+# required-features = ["dial9"]
 
 # [features]
 # default = []
